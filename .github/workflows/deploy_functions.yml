@@ -21,7 +21,16 @@ jobs:
     - name: Install black
       run: pip install black
     - name: Run black
-      run: black *.py
+      run: black --check *.py || (black *.py && echo '##[set-output name=formatted;]true')
+      id: black
+    - name: Commit changes
+      if: steps.black.outputs.formatted == 'true'
+      run: |
+        git add .
+        git commit -m "Apply black formatting"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   format-checking:
     needs: auto-formatting
