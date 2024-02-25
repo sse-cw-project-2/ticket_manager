@@ -11,6 +11,8 @@ on:
 jobs:
   auto-formatting:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -21,7 +23,7 @@ jobs:
     - name: Install black
       run: pip install black
     - name: Run black
-      run: black --check *.py || (black *.py && echo '##[set-output name=formatted;]true')
+      run: black --check *.py || (black *.py && echo "::set-output name=formatted::true"))
       id: black
     - name: Commit changes
       if: steps.black.outputs.formatted == 'true'
