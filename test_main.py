@@ -28,7 +28,6 @@ from main import (
 
 
 class TestPurchaseTicket(unittest.TestCase):
-
     @patch("main.supabase.table")
     def test_purchase_ticket_success(self, mock_table):
         # Mock the chain of method calls for a successful ticket query and update
