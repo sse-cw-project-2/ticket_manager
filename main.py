@@ -16,12 +16,13 @@
 #           Need to set up app routes at the end of the file for API calls and define a
 #        validate_request function once there is a standardised JSON request template.
 ####################################################################################################
-from flask import Flask
+from flask import Flask, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import pytz
 import os
+import functions_framework
 
 app = Flask(__name__)
 
@@ -343,4 +344,119 @@ def delete_expired_tickets(days_ago):
         return False, f"An exception occurred: {str(e)}"
 
 
-# Set up app routes
+@functions_framework.http
+def api_purchase_ticket(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "event_id" not in req_data or "attendee_id" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = purchase_ticket(req_data["event_id"], req_data["attendee_id"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"message": result[1]}), 200
+
+@functions_framework.http
+def api_create_tickets(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "event_id" not in req_data or "price" not in req_data or "n_tickets" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = create_tickets(req_data["event_id"], req_data["price"], req_data["n_tickets"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"message": result[1]}), 200
+
+@functions_framework.http
+def api_assign_tickets_to_attendee(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "ticket_ids" not in req_data or "attendee_id" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = assign_tickets_to_attendee(req_data["ticket_ids"], req_data["attendee_id"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"message": result[1]}), 200
+
+@functions_framework.http
+def api_get_tickets_info(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "ticket_ids" not in req_data or "requested_attributes" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = get_tickets_info(req_data["ticket_ids"], req_data["requested_attributes"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"tickets_info": result[1]}), 200
+
+@functions_framework.http
+def api_get_tickets_info_for_users(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "attendee_ids" not in req_data or "requested_attributes" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = get_tickets_info_for_users(req_data["attendee_ids"], req_data["requested_attributes"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"tickets_info_by_user": result[1]}), 200
+
+@functions_framework.http
+def api_update_tickets_redeemed_status(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "ticket_ids" not in req_data or "redeemed_status" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = update_tickets_redeemed_status(req_data["ticket_ids"], req_data["redeemed_status"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"message": result[1]}), 200
+
+@functions_framework.http
+def api_delete_expired_tickets(request):
+    req_data = request.get_json()
+
+    # Validate request data
+    if not req_data or "days_ago" not in req_data:
+        return jsonify({"error": "Invalid or missing data in JSON payload"}), 400
+
+    # Function call
+    result = delete_expired_tickets(req_data["days_ago"])
+
+    # Handle the possible outcomes
+    if not result[0]:
+        return
