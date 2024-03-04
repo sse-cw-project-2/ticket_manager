@@ -60,7 +60,7 @@ def purchase_ticket(event_id, attendee_id):
         queue_name = os.environ["CLOUD_TASKS_QUEUE"]
         location = os.environ["CLOUD_TASKS_LOCATION"]
         project_id = os.environ["GCP_PROJECT_ID"]
-        
+
         # Construct the full queue path
         queue_path = client.queue_path(project_id, location, queue_name)
 
@@ -78,7 +78,8 @@ def purchase_ticket(event_id, attendee_id):
     except Exception as e:
         return False, str(e)
 
-# To be completed once all function requests standardised as with account manager:
+
+# To be completed once all function requests standardized as with account manager:
 def validate_request(request):
     """
     Placeholder for function to verify that a request will be unlikely to cause an error after
@@ -356,53 +357,54 @@ def api_purchase_ticket(request):
         return jsonify({"error": result[1]}), 500
     else:
         return jsonify({"message": result[1]}), 200
-    
+
+
 @functions_framework.http
 def process_ticket_purchase(request):
-  """
-  This function is triggered by the Cloud Tasks queue to process ticket purchases.
-  """
-  # Get the task payload data
-  data = json.loads(request.data.decode("utf-8"))
-  event_id = data["event_id"]
-  attendee_id = data["attendee_id"]
+    """
+    This function is triggered by the Cloud Tasks queue to process ticket purchases.
+    """
+    # Get the task payload data
+    data = json.loads(request.data.decode("utf-8"))
+    event_id = data["event_id"]
+    attendee_id = data["attendee_id"]
 
-  """
+    """
   ** Your existing logic for processing the ticket purchase with Supabase goes here **
   """
 
-  try:
-    # Check for available tickets for the event
-    available_tickets = (
-        supabase.table("tickets")
-        .select("ticket_id")
-        .eq("event_id", event_id)
-        .eq("status", "available")
-        .limit(1)
-        .execute()
-    )
+    try:
+        # Check for available tickets for the event
+        available_tickets = (
+            supabase.table("tickets")
+            .select("ticket_id")
+            .eq("event_id", event_id)
+            .eq("status", "available")
+            .limit(1)
+            .execute()
+        )
 
-    if available_tickets.error or not available_tickets.data:
-        return "No available tickets for this event."
+        if available_tickets.error or not available_tickets.data:
+            return "No available tickets for this event."
 
-    ticket_id = available_tickets.data[0]["ticket_id"]
+        ticket_id = available_tickets.data[0]["ticket_id"]
 
-    # Update the ticket to mark it as sold and assign the attendee_id
-    update_result = (
-        supabase.table("tickets")
-        .update({"status": "sold", "attendee_id": attendee_id})
-        .eq("ticket_id", ticket_id)
-        .execute()
-    )
+        # Update the ticket to mark it as sold and assign the attendee_id
+        update_result = (
+            supabase.table("tickets")
+            .update({"status": "sold", "attendee_id": attendee_id})
+            .eq("ticket_id", ticket_id)
+            .execute()
+        )
 
-    if update_result.error:
-        return f"Failed to update ticket status: {update_result.error}"
+        if update_result.error:
+            return f"Failed to update ticket status: {update_result.error}"
 
-    # Assuming successful payment and ticket update
-    return "Ticket purchase successful!"
+        # Assuming successful payment and ticket update
+        return "Ticket purchase successful!"
 
-  except Exception as e:
-    return f"An error occurred during purchase processing: {str(e)}"
+    except Exception as e:
+        return f"An error occurred during purchase processing: {str(e)}"
 
 
 @functions_framework.http
@@ -531,4 +533,6 @@ def api_delete_expired_tickets(request):
 
     # Handle the possible outcomes
     if not result[0]:
-        return
+        return jsonify({"error": result[1]}), 500
+    else:
+        return jsonify({"message": result[1]}), 200
