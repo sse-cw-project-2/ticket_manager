@@ -93,6 +93,20 @@ jobs:
           --entry-point api_purchase_ticket \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
+      
+      - name: Deploy process_ticket_purchase
+        run: |
+          gcloud functions deploy process_ticket_purchase \
+          --runtime python39 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --source . \
+          --entry-point process_ticket_purchase \
+          --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
+          --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest \
+          --set-secrets=CLOUD_TASKS_QUEUE=projects/950999785047/secrets/CLOUD_TASKS_QUEUE:latest\
+          --set-secrets=CLOUD_TASKS_LOCATION=projects/950999785047/secrets/CLOUD_TASKS_LOCATION:latest\
+          --set-secrets=GCP_PROJECT_ID=projects/950999785047/secrets/GCP_PROJECT_ID:latest
 
       - name: Deploy api_get_tickets_info
         run: |

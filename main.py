@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import pytz
 import os
 import functions_framework
+import json
 
 app = Flask(__name__)
 
@@ -35,8 +36,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def purchase_ticket(event_id, attendee_id):
     """
-    Attempts to purchase a ticket for a given event on behalf of an attendee. This simplified
-    version does not explicitly use transactions but assumes atomic operations where possible.
+    Attempts to purchase a ticket for a given event on behalf of an attendee.
+    This version uses Cloud Tasks for asynchronous processing.
 
     Args:
         event_id (str): The unique identifier for the event.
@@ -46,41 +47,36 @@ def purchase_ticket(event_id, attendee_id):
         A tuple containing a boolean indicating success, and either a success message or an error message.
     """
     try:
-        # Check for available tickets for the event
-        available_tickets = (
-            supabase.table("tickets")
-            .select("ticket_id")
-            .eq("event_id", event_id)
-            .eq("status", "available")
-            .limit(1)
-            .execute()
-        )
+        # Prepare Cloud Tasks data (payload)
+        task_payload = {
+            "event_id": event_id,
+            "attendee_id": attendee_id,
+        }
 
-        if available_tickets.error or not available_tickets.data:
-            return False, "No available tickets for this event."
+        # Get Cloud Tasks client (assuming you have configured it)
+        client = functions_framework.cloud_tasks_v2.CloudTasksClient()
 
-        ticket_id = available_tickets.data[0]["ticket_id"]
+        # Get the queue name and location from environment variables
+        queue_name = os.environ["CLOUD_TASKS_QUEUE"]
+        location = os.environ["CLOUD_TASKS_LOCATION"]
+        project_id = os.environ["GCP_PROJECT_ID"]
+        
+        # Construct the full queue path
+        queue_path = client.queue_path(project_id, location, queue_name)
 
-        # Update the ticket to mark it as sold and assign the attendee_id
-        update_result = (
-            supabase.table("tickets")
-            .update({"status": "sold", "attendee_id": attendee_id})
-            .eq("ticket_id", ticket_id)
-            .execute()
-        )
+        # Create the Cloud Tasks task
+        task = {"payload": json.dumps(task_payload).encode("utf-8")}
 
-        if update_result.error:
-            return False, "Failed to update ticket status."
-
-        # Assuming successful payment and ticket update
-        return (
-            True,
-            f"Ticket {ticket_id} successfully purchased for event {event_id} by attendee {attendee_id}.",
-        )
-
+        try:
+            response = client.create_task(request={"parent": queue_path}, task=task)
+            print(f"Task created with name: {response.name}")
+            # Respond to user immediately (e.g., confirmation message)
+            return True, "Ticket purchase request submitted!"
+        except Exception as e:
+            print(f"Error creating Cloud Task: {e}")
+            return False, "An error occurred. Please try again later."
     except Exception as e:
         return False, str(e)
-
 
 # To be completed once all function requests standardised as with account manager:
 def validate_request(request):
@@ -360,6 +356,53 @@ def api_purchase_ticket(request):
         return jsonify({"error": result[1]}), 500
     else:
         return jsonify({"message": result[1]}), 200
+    
+@functions_framework.http
+def process_ticket_purchase(request):
+  """
+  This function is triggered by the Cloud Tasks queue to process ticket purchases.
+  """
+  # Get the task payload data
+  data = json.loads(request.data.decode("utf-8"))
+  event_id = data["event_id"]
+  attendee_id = data["attendee_id"]
+
+  """
+  ** Your existing logic for processing the ticket purchase with Supabase goes here **
+  """
+
+  try:
+    # Check for available tickets for the event
+    available_tickets = (
+        supabase.table("tickets")
+        .select("ticket_id")
+        .eq("event_id", event_id)
+        .eq("status", "available")
+        .limit(1)
+        .execute()
+    )
+
+    if available_tickets.error or not available_tickets.data:
+        return "No available tickets for this event."
+
+    ticket_id = available_tickets.data[0]["ticket_id"]
+
+    # Update the ticket to mark it as sold and assign the attendee_id
+    update_result = (
+        supabase.table("tickets")
+        .update({"status": "sold", "attendee_id": attendee_id})
+        .eq("ticket_id", ticket_id)
+        .execute()
+    )
+
+    if update_result.error:
+        return f"Failed to update ticket status: {update_result.error}"
+
+    # Assuming successful payment and ticket update
+    return "Ticket purchase successful!"
+
+  except Exception as e:
+    return f"An error occurred during purchase processing: {str(e)}"
 
 
 @functions_framework.http
