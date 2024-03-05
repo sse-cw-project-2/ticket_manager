@@ -83,95 +83,57 @@ jobs:
       - name: Confirm Google Cloud Authentication
         run: gcloud auth list
 
-      - name: Deploy api_purchase_ticket
+      - name: Deploy api_create_tickets
         run: |
-          gcloud functions deploy api_purchase_ticket \
+          gcloud functions deploy api_create_tickets \
           --runtime python39 \
           --trigger-http \
           --allow-unauthenticated \
           --source . \
-          --entry-point api_purchase_ticket \
-          --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
-          --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
-      
-      - name: Deploy process_ticket_purchase
-        run: |
-          gcloud functions deploy process_ticket_purchase \
-          --runtime python39 \
-          --trigger-http \
-          --allow-unauthenticated \
-          --source . \
-          --entry-point process_ticket_purchase \
-          --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
-          --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest \
-          --set-secrets=CLOUD_TASKS_QUEUE=projects/950999785047/secrets/CLOUD_TASKS_QUEUE:latest\
-          --set-secrets=CLOUD_TASKS_LOCATION=projects/950999785047/secrets/CLOUD_TASKS_LOCATION:latest\
-          --set-secrets=GCP_PROJECT_ID=projects/950999785047/secrets/GCP_PROJECT_ID:latest
-
-      - name: Deploy api_get_tickets_info
-        run: |
-          gcloud functions deploy api_get_tickets_info \
-          --runtime python39 \
-          --trigger-http \
-          --allow-unauthenticated \
-          --source . \
-          --entry-point api_get_tickets_info \
+          --entry-point api_create_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
 
-      - name: Deploy api_assign_tickets_to_attendee
+      - name: Deploy api_reserve_tickets
         run: |
-          gcloud functions deploy api_assign_tickets_to_attendee \
+          gcloud functions deploy api_reserve_tickets \
           --runtime python39 \
           --trigger-http \
           --allow-unauthenticated \
           --source . \
-          --entry-point api_assign_tickets_to_attendee \
+          --entry-point api_reserve_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
 
-      - name: Deploy api_get_tickets_info
+      - name: Deploy api_release_held_tickets
         run: |
-          gcloud functions deploy api_get_tickets_info \
+          gcloud functions deploy api_release_held_tickets \
           --runtime python39 \
           --trigger-http \
           --allow-unauthenticated \
           --source . \
-          --entry-point api_get_tickets_info \
+          --entry-point api_release_held_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
 
-      - name: Deploy api_get_tickets_info_for_users
+      - name: Deploy api_get_attendee_tickets
         run: |
-          gcloud functions deploy api_get_tickets_info_for_users \
+          gcloud functions deploy api_get_attendee_tickets \
           --runtime python39 \
           --trigger-http \
           --allow-unauthenticated \
           --source . \
-          --entry-point api_get_tickets_info_for_users \
-          --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
-          --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest 
-
-      - name: Deploy api_update_tickets_redeemed_status
-        run: |
-          gcloud functions deploy api_update_tickets_redeemed_status \
-          --runtime python39 \
-          --trigger-http \
-          --allow-unauthenticated \
-          --source . \
-          --entry-point api_update_tickets_redeemed_status \
+          --entry-point api_get_attendee_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
 
-      - name: Deploy api_delete_expired_tickets
+      - name: Deploy api_purchase_tickets
         run: |
-          gcloud functions deploy api_delete_expired_tickets \
+          gcloud functions deploy api_purchase_tickets \
           --runtime python39 \
           --trigger-http \
           --allow-unauthenticated \
           --source . \
-          --entry-point api_delete_expired_tickets \
+          --entry-point api_purchase_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
-          
-          
