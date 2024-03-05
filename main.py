@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import pytz
 import os
 import functions_framework
+from google.cloud import tasks_v2
 import json
 
 app = Flask(__name__)
@@ -54,7 +55,7 @@ def purchase_ticket(event_id, attendee_id):
         }
 
         # Get Cloud Tasks client (assuming you have configured it)
-        client = functions_framework.cloud_tasks_v2.CloudTasksClient()
+        client = tasks_v2.CloudTasksClient()
 
         # Get the queue name and location from environment variables
         queue_name = os.environ["CLOUD_TASKS_QUEUE"]
