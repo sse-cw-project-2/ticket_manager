@@ -6,9 +6,9 @@
 #
 # Authors: James Hartley, Ankur Desai, Patrick Borman, Julius Gasson, and Vadim Dunaevskiy
 # Date: 2024-02-20
-# Version: 2.1
+# Version: 2.2
 #
-# Changes: Overhauled functionality for core app.
+# Changes: Added API for redeeming tickets
 #
 ####################################################################################################
 
