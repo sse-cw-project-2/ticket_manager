@@ -137,3 +137,14 @@ jobs:
           --entry-point api_purchase_tickets \
           --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
           --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest
+
+      - name: Deploy api_redeem_ticket
+        run: |
+          gcloud functions deploy api_redeem_ticket \
+          --runtime python39 \
+          --trigger-http \
+          --allow-unauthenticated \
+          --source . \
+          --entry-point api_redeem_ticket \
+          --set-secrets=SUPABASE_URL=projects/950999785047/secrets/SUPABASE_URL:latest \
+          --set-secrets=SUPABASE_KEY=projects/950999785047/secrets/SUPABASE_KEY:latest

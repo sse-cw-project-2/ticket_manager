@@ -218,6 +218,41 @@ def get_attendee_tickets(attendee_id):
         return False, f"An exception occurred: {str(e)}"
 
 
+def redeem_ticket(ticket_id):
+    """
+    Marks a set of tickets as redeemed, meaning they cannot be used a second time for admittance.
+
+    Args:
+        attendee_id (str): The unique identifier for the attendee purchasing the tickets.
+        ticket_ids (list of str): A list of ticket_ids to be marked as purchased.
+
+    Returns:
+        A tuple containing a boolean indicating success, and either a success message or an error message.
+    """
+    try:
+        # Execute the update operation to mark tickets as purchased by setting attendee_id
+        update_response = (
+            supabase.table("tickets")
+            .update({"status": "redeemed"})
+            .in_("ticket_id", ticket_id)
+            .execute()
+        )
+
+        # Check if the update operation was successful
+        if update_response.data:
+            return True, "Ticket successfully redeemed."
+        else:
+            # Assuming the update_response includes an 'error' attribute for errors
+            error_message = (
+                update_response.error.get("message", "Unknown error")
+                if update_response.error
+                else "Failed to update tickets."
+            )
+            return False, error_message
+    except Exception as e:
+        return False, f"An exception occurred: {str(e)}"
+
+
 @functions_framework.http
 def api_create_tickets(request):
     req_data = request.get_json()
@@ -321,6 +356,29 @@ def api_get_attendee_tickets(request):
     if "identifier" not in req_data:
         return (
             jsonify({"error": "Missing identifier: attendee_id in JSON payload"}),
+            400,
+        )
+
+    # Function call
+    success, message = get_attendee_tickets(req_data["identifier"])
+
+    # Handle outcomes
+    if success:
+        return jsonify({"message": message}), 200
+    else:
+        return jsonify({"error": message}), 400
+
+
+@functions_framework.http
+def api_redeem_ticket(request):
+    req_data = request.get_json()
+
+    # Check for required data before querying Supabase
+    if not req_data:
+        return jsonify({"error": "Missing JSON payload"}), 400
+    if "identifier" not in req_data:
+        return (
+            jsonify({"error": "Missing identifier: ticket_id in JSON payload"}),
             400,
         )
 
