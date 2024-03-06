@@ -16,13 +16,15 @@
 from flask import Flask, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import os
 import functions_framework
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 import qrcode
-from io import BytesIO
 from PIL import Image
-import yagmail
-import base64
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -32,59 +34,63 @@ SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def generate_qr_code(ticket_id):
-    # Generate a QR code for the ticket_id
-   # qr = qrcode.QRCode(
-   #     version=1,
-   #     error_correction=qrcode.constants.ERROR_CORRECT_L,
-   #     box_size=10,
-   #     border=4,
-   # )
-   # qr.add_data(ticket_id)
-   # qr.make(fit=True)
 
-   # img = qr.make_image(fill_color="black", back_color="white")
-   # img = img.resize((200, 200), Image.Resampling.LANCZOS)
+def generate_qr_code_binary(ticket_id):
+    # Similar to your generate_qr_code_base64 function but returns binary data
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(ticket_id)
+    qr.make(fit=True)
 
-    # Convert image to base64
-   # buffered = BytesIO()
-   # img.save(buffered, format="PNG")
-   # img_str = base64.b64encode(buffered.getvalue()).decode()
+    img = qr.make_image(fill_color="black", back_color="white")
+    img = img.resize((200, 200), Image.Resampling.LANCZOS)
 
-   # return img_str
-    pass
-
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return buffered.getvalue()  # Return bytes
 
 def send_ticket_confirmation_email(recipient_email, ticket_ids):
-    sender_email = os.environ["BUSINESS_EMAIL"]
-    subject = "Ticket Confirmation - Jumpstart Events"
-    app_password = os.environ["APP_PASSWORD"]
+    # SMTP server configuration (this example uses Gmail SMTP server)
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    sender_email = os.getenv("BUSINESS_EMAIL")
+    app_password = os.getenv("APP_PASSWORD")
 
-    yag = yagmail.SMTP(user=sender_email, password=app_password)
+    # Setup message
+    msg = MIMEMultipart('related')
+    msg['Subject'] = "Ticket Confirmation - Jumpstart Events"
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
 
-    # Generate QR codes for the tickets
-    #qr_codes = [generate_qr_code(ticket_id) for ticket_id in ticket_ids]
+    # HTML body
+    html = f"""
+    <html>
+      <body>
+        <p>Hey {recipient_email},</p>
+        <p>Thank you for purchasing tickets with Jumpstart Events!</p>
+        <p>Please find your ticket QR codes below:</p>
+    """
+    for i, ticket_id in enumerate(ticket_ids):
+        qr_code_binary = generate_qr_code_binary(ticket_id)
+        image_cid = f"qr_code_{i}"
+        msg.attach(MIMEImage(qr_code_binary, 'PNG', cid=image_cid))
+        html += f"<img src='cid:{image_cid}' alt='QR Code {i + 1}'><br>"
 
-    contents = [
-        f"Hey {recipient_email}\n"
-        + "Thank you for purchasing tickets with Jumpstart Events!\n\n"
-        + "Please find your ticket QR codes attached to this email.\n\n"
-        + "Your Jumpstart Events Team"
-    ]
+    html += """
+      </body>
+    </html>
+    """
+    msg.attach(MIMEText(html, 'html'))
 
-    # Include QR codes as inline content in the email
-    #for i, qr_code in enumerate(qr_codes):
-    #    contents.append(f"<img src='data:image/png;base64,{qr_code}' alt='QR Code {i + 1}'>")
-
-    # Attach the QR codes to the email (using byte data directly)
-#    attachments = {f"qr_code_{i + 1}.png": base64.b64decode(qr_code) for i, qr_code in enumerate(qr_codes)}
-
-    yag.send(
-                recipient_email,
-                subject,
-                contents,  # Include any text content as needed
-            )
-
+    # Send email
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(sender_email, app_password)
+        server.send_message(msg)
 
 
 def create_tickets(event_id, price, n_tickets=1):
@@ -474,5 +480,8 @@ def api_redeem_ticket(request):
 #         print(f"Attempt {i + 1}: Reservation failed: {result_reserve}")
 #
 # print(get_attendee_tickets(attendee_id))
-    
-print(send_ticket_confirmation_email('duna.vadim@icloud.com', [123,443]))
+
+# # Generate a QR code and display it
+# ticket_id = 'exampleTicket123'
+#
+# print(send_ticket_confirmation_email('james.ag.hartley@gmail.com', [123,443]))
