@@ -18,6 +18,11 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 import functions_framework
+import qrcode
+from io import BytesIO
+from PIL import Image
+import yagmail
+import base64
 
 app = Flask(__name__)
 
@@ -26,6 +31,60 @@ load_dotenv()
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def generate_qr_code(ticket_id):
+    # Generate a QR code for the ticket_id
+   # qr = qrcode.QRCode(
+   #     version=1,
+   #     error_correction=qrcode.constants.ERROR_CORRECT_L,
+   #     box_size=10,
+   #     border=4,
+   # )
+   # qr.add_data(ticket_id)
+   # qr.make(fit=True)
+
+   # img = qr.make_image(fill_color="black", back_color="white")
+   # img = img.resize((200, 200), Image.Resampling.LANCZOS)
+
+    # Convert image to base64
+   # buffered = BytesIO()
+   # img.save(buffered, format="PNG")
+   # img_str = base64.b64encode(buffered.getvalue()).decode()
+
+   # return img_str
+    pass
+
+
+def send_ticket_confirmation_email(recipient_email, ticket_ids):
+    sender_email = os.environ["BUSINESS_EMAIL"]
+    subject = "Ticket Confirmation - Jumpstart Events"
+    app_password = os.environ["APP_PASSWORD"]
+
+    yag = yagmail.SMTP(user=sender_email, password=app_password)
+
+    # Generate QR codes for the tickets
+    #qr_codes = [generate_qr_code(ticket_id) for ticket_id in ticket_ids]
+
+    contents = [
+        f"Hey {recipient_email}\n"
+        + "Thank you for purchasing tickets with Jumpstart Events!\n\n"
+        + "Please find your ticket QR codes attached to this email.\n\n"
+        + "Your Jumpstart Events Team"
+    ]
+
+    # Include QR codes as inline content in the email
+    #for i, qr_code in enumerate(qr_codes):
+    #    contents.append(f"<img src='data:image/png;base64,{qr_code}' alt='QR Code {i + 1}'>")
+
+    # Attach the QR codes to the email (using byte data directly)
+#    attachments = {f"qr_code_{i + 1}.png": base64.b64decode(qr_code) for i, qr_code in enumerate(qr_codes)}
+
+    yag.send(
+                recipient_email,
+                subject,
+                contents,  # Include any text content as needed
+            )
+
 
 
 def create_tickets(event_id, price, n_tickets=1):
@@ -157,7 +216,7 @@ def purchase_tickets(user_id, ticket_ids):
         # Check if the update operation was successful
         if response.data:
             email = response.data
-            # Vadim to add send email here
+            send_ticket_confirmation_email(email, ticket_ids)
             return (
                 True,
                 f"{len(ticket_ids)} tickets successfully purchased by attendee {user_id}.",
@@ -415,3 +474,5 @@ def api_redeem_ticket(request):
 #         print(f"Attempt {i + 1}: Reservation failed: {result_reserve}")
 #
 # print(get_attendee_tickets(attendee_id))
+    
+print(send_ticket_confirmation_email('duna.vadim@icloud.com', [123,443]))
