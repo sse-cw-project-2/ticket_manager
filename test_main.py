@@ -16,7 +16,7 @@
 
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from main import (
     create_tickets,
     reserve_tickets,
@@ -208,48 +208,56 @@ class TestReleaseHeldTickets(unittest.TestCase):
 class TestPurchaseTickets(unittest.TestCase):
 
     @patch("main.supabase.table")
-    def test_purchase_tickets_success(self, mock_table):
-        # Setup for a successful update operation
-        mock_response = Mock()
-        mock_response.data = True  # Simulate successful update operation
-        mock_table.return_value.update.return_value.in_.return_value.execute.return_value = (
-            mock_response
-        )
+    def test_purchase_tickets_success(self, mock_supabase):
+        # Setup the mock to simulate a successful response
+        mock_response = MagicMock()
+        mock_response.execute.return_value.data = True  # Simulate success
+        mock_supabase.rpc.return_value = mock_response
 
-        success, message = purchase_tickets(
-            "attendee_id", ["ticket1", "ticket2", "ticket3"]
-        )
+        user_id = "115637969968779593674"
+        ticket_ids = [
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5a",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5b",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5c",
+        ]
+        success, message = purchase_tickets(user_id, ticket_ids)
 
         self.assertTrue(success)
-        self.assertIn("tickets successfully purchased by attendee", message)
+        self.assertIn("3 tickets successfully purchased", message)
 
-    @patch("main.supabase.table")
-    def test_purchase_tickets_failure(self, mock_table):
-        # Setup for a failed update operation due to Supabase error
-        mock_response = Mock()
-        mock_response.data = None
-        mock_response.error = {"message": "Failed to update due to error"}
-        mock_table.return_value.update.return_value.in_.return_value.execute.return_value = (
-            mock_response
+    @patch("main.supabase")
+    def test_purchase_tickets_failure(self, mock_supabase):
+        # Setup the mock to simulate a failure
+        mock_response = MagicMock()
+        mock_response.execute.return_value.data = None
+        mock_response.execute.return_value.error.get.return_value = (
+            "Failed to update tickets."
         )
+        mock_supabase.rpc.return_value = mock_response
 
-        success, message = purchase_tickets(
-            "attendee_id", ["ticket1", "ticket2", "ticket3"]
-        )
+        user_id = "115637969968779593674"
+        ticket_ids = [
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5a",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5b",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5c",
+        ]
+        success, message = purchase_tickets(user_id, ticket_ids)
 
         self.assertFalse(success)
-        self.assertIn("Failed to update due to error", message)
+        self.assertEqual(message, "Failed to update tickets.")
 
-    @patch("main.supabase.table")
-    def test_purchase_tickets_exception(self, mock_table):
-        # Setup to throw an exception during the update operation
-        mock_table.return_value.update.return_value.in_.return_value.execute.side_effect = Exception(
-            "Test exception"
-        )
+    @patch("main.supabase")
+    def test_purchase_tickets_exception(self, mock_supabase):
+        # Setup the mock to raise an exception
+        mock_supabase.rpc.side_effect = Exception("Test exception")
 
-        success, message = purchase_tickets(
-            "attendee_id", ["ticket1", "ticket2", "ticket3"]
-        )
+        user_id = "115637969968779593674"
+        ticket_ids = [
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5a",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5b",
+            "fade9e23-9cb6-4f05-a1b5-e7d53d2a3b5c",
+        ]
+        success, message = purchase_tickets(user_id, ticket_ids)
 
         self.assertFalse(success)
         self.assertIn("An exception occurred: Test exception", message)
@@ -357,7 +365,7 @@ class TestRedeemTicket(unittest.TestCase):
             "Test exception"
         )
 
-        success, message = redeem_ticket("ticket_id")
+        success, message = redeem_ticket("123456789101112")
 
         self.assertFalse(success)
         self.assertIn("An exception occurred: Test exception", message)

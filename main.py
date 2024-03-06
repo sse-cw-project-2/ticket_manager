@@ -137,37 +137,36 @@ def release_held_tickets(ticket_ids):
         return False, f"An exception occurred: {str(e)}"
 
 
-def purchase_tickets(attendee_id, ticket_ids):
+def purchase_tickets(user_id, ticket_ids):
     """
     Marks a set of tickets as purchased by setting the attendee column for those tickets to the given attendee_id.
 
     Args:
-        attendee_id (str): The unique identifier for the attendee purchasing the tickets.
+        user_id (str): The unique identifier for the attendee purchasing the tickets.
         ticket_ids (list of str): A list of ticket_ids to be marked as purchased.
 
     Returns:
         A tuple containing a boolean indicating success, and either a success message or an error message.
     """
     try:
-        # Execute the update operation to mark tickets as purchased by setting attendee_id
-        update_response = (
-            supabase.table("tickets")
-            .update({"attendee_id": attendee_id})
-            .in_("ticket_id", ticket_ids)
-            .execute()
-        )
+        # Assuming 'supabase' is your initialized Supabase client
+        response = supabase.rpc(
+            "purchase_tickets", {"ticket_ids_arg": ticket_ids, "user_id_arg": user_id}
+        ).execute()
 
         # Check if the update operation was successful
-        if update_response.data:
+        if response.data:
+            email = response.data
+            # Vadim to add send email here
             return (
                 True,
-                f"{len(ticket_ids)} tickets successfully purchased by attendee {attendee_id}.",
+                f"{len(ticket_ids)} tickets successfully purchased by attendee {user_id}.",
             )
         else:
             # Assuming the update_response includes an 'error' attribute for errors
             error_message = (
-                update_response.error.get("message", "Unknown error")
-                if update_response.error
+                response.error.get("message", "Unknown error")
+                if response.error
                 else "Failed to update tickets."
             )
             return False, error_message
