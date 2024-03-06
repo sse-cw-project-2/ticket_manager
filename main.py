@@ -22,8 +22,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-import qrcode
-from PIL import Image
+import qrcode  # type: ignore
+from PIL import Image  # type: ignore
 from io import BytesIO
 
 app = Flask(__name__)
