@@ -53,6 +53,7 @@ def generate_qr_code_binary(ticket_id):
     img.save(buffered, format="PNG")
     return buffered.getvalue()  # Return bytes
 
+
 def send_ticket_confirmation_email(recipient_email, ticket_ids):
     # SMTP server configuration (this example uses Gmail SMTP server)
     smtp_server = "smtp.gmail.com"
@@ -61,10 +62,10 @@ def send_ticket_confirmation_email(recipient_email, ticket_ids):
     app_password = os.getenv("APP_PASSWORD")
 
     # Setup message
-    msg = MIMEMultipart('related')
-    msg['Subject'] = "Ticket Confirmation - Jumpstart Events"
-    msg['From'] = sender_email
-    msg['To'] = recipient_email
+    msg = MIMEMultipart("related")
+    msg["Subject"] = "Ticket Confirmation - Jumpstart Events"
+    msg["From"] = sender_email
+    msg["To"] = recipient_email
 
     # HTML body
     html = f"""
@@ -77,14 +78,14 @@ def send_ticket_confirmation_email(recipient_email, ticket_ids):
     for i, ticket_id in enumerate(ticket_ids):
         qr_code_binary = generate_qr_code_binary(ticket_id)
         image_cid = f"qr_code_{i}"
-        msg.attach(MIMEImage(qr_code_binary, 'PNG', cid=image_cid))
+        msg.attach(MIMEImage(qr_code_binary, "PNG", cid=image_cid))
         html += f"<img src='cid:{image_cid}' alt='QR Code {i + 1}'><br>"
 
     html += """
       </body>
     </html>
     """
-    msg.attach(MIMEText(html, 'html'))
+    msg.attach(MIMEText(html, "html"))
 
     # Send email
     with smtplib.SMTP(smtp_server, smtp_port) as server:
@@ -456,7 +457,7 @@ def api_redeem_ticket(request):
 #
 # # First, attempt to create the tickets
 # print(create_tickets(event_id, price, n_tickets))
-#
+
 # # Then, in each iteration, reserve and attempt to purchase tickets
 # for i in range(5):
 #     success_reserve, result_reserve, count_reserve, ticket_ids = reserve_tickets(
@@ -480,8 +481,8 @@ def api_redeem_ticket(request):
 #         print(f"Attempt {i + 1}: Reservation failed: {result_reserve}")
 #
 # print(get_attendee_tickets(attendee_id))
-
-# # Generate a QR code and display it
-# ticket_id = 'exampleTicket123'
 #
-# print(send_ticket_confirmation_email('james.ag.hartley@gmail.com', [123,443]))
+# # # Generate a QR code and display it
+# # ticket_id = 'exampleTicket123'
+# #
+# # print(send_ticket_confirmation_email('james.ag.hartley@gmail.com', [123,443]))
