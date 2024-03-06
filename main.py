@@ -75,41 +75,31 @@ def reserve_tickets(event_id, n_tickets=1):
         n_tickets (int): The number of tickets to reserve.
 
     Returns:
-        A tuple containing a boolean indicating success, and either a list of ticket_ids reserved or an error message.
+        A tuple containing a boolean indicating success, a message, the number of tickets reserved, and an array
+            of ticket_ids.
     """
     try:
-        # Execute the query to find available tickets
-        response = (
-            supabase.table("tickets")
-            .select("ticket_id")
-            .eq("event_id", event_id)
-            .eq("status", "available")
-            .limit(n_tickets)
-            .execute()
-        )
+        # Call the stored procedure
+        stored_proc_response = supabase.rpc(
+            "reserve_available_tickets",
+            {"event_id_arg": event_id, "n_tickets_arg": n_tickets},
+        ).execute()
 
-        # Assuming the response object has a 'data' attribute for the data
-        if not response.data or len(response.data) < n_tickets:
-            return False, "Not enough available tickets to reserve."
+        # Assuming stored_proc_response.data contains the procedure's output
+        reserved_count = stored_proc_response.data["reserved_count"]
+        ticket_ids = stored_proc_response.data["ticket_ids"]
 
-        # Extract ticket IDs from the data
-        ticket_ids = [ticket["ticket_id"] for ticket in response.data]
-
-        # Execute the update operation
-        update_response = (
-            supabase.table("tickets")
-            .update({"status": "reserved"})
-            .in_("ticket_id", ticket_ids)
-            .execute()
-        )
-
-        # Check the update operation was successful
-        if not update_response.data:
-            return False, "Failed to update ticket status to 'reserved'."
-
-        return True, ticket_ids
+        if reserved_count > 0:
+            return (
+                True,
+                f"Reserved {reserved_count} tickets successfully.",
+                reserved_count,
+                ticket_ids,
+            )
+        else:
+            return False, "No available tickets to reserve.", 0, []
     except Exception as e:
-        return False, f"An exception occurred: {str(e)}"
+        return False, f"An exception occurred: {str(e)}", 0, []
 
 
 def release_held_tickets(ticket_ids):
@@ -169,7 +159,10 @@ def purchase_tickets(attendee_id, ticket_ids):
 
         # Check if the update operation was successful
         if update_response.data:
-            return True, f"Tickets successfully purchased by attendee {attendee_id}."
+            return (
+                True,
+                f"{len(ticket_ids)} tickets successfully purchased by attendee {attendee_id}.",
+            )
         else:
             # Assuming the update_response includes an 'error' attribute for errors
             error_message = (
@@ -402,20 +395,22 @@ def api_redeem_ticket(request):
 #
 # # Then, in each iteration, reserve and attempt to purchase tickets
 # for i in range(5):
-#     success_reserve, result_reserve = reserve_tickets(event_id, n_tickets)
+#     success_reserve, result_reserve, count_reserve, ticket_ids = reserve_tickets(
+#         event_id, n_tickets
+#     )
 #     if success_reserve:
 #         # If tickets were successfully reserved, extract the ticket IDs
-#         reserved_tickets = result_reserve
+#         reserved_tickets = ticket_ids
 #
 #         # Send some back
-#         success_release, result_release = release_held_tickets(reserved_tickets)
+#         # success_release, result_release = release_held_tickets(reserved_tickets)
 #         # Attempt to purchase the reserved tickets
 #         success_purchase, result_purchase = purchase_tickets(
 #             attendee_id, reserved_tickets
 #         )
 #
 #         print(
-#             f"Attempt {i + 1}: Reservation: {result_reserve}, Purchase: {result_release}"
+#             f"Attempt {i + 1}: Reservation: {result_reserve}, Purchase: {result_purchase}"
 #         )
 #     else:
 #         print(f"Attempt {i + 1}: Reservation failed: {result_reserve}")
