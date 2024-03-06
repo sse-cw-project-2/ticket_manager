@@ -216,9 +216,9 @@ class TestPurchaseTickets(unittest.TestCase):
 
         user_id = "115637969968779593674"
         ticket_ids = [
-            "fade9e23-9cb6-4f05-a1b5-e7d53d1a3b5a",
-            "fade9e23-9cb6-4f05-a1b5-e7d53d1a3b5b",
-            "fade9e23-9cb6-4f05-a1b5-e7d53d1a3b5c",
+            "499e0822-9d75-45d9-93d5-feed5b85aa1b",
+            "7eec935a-0d83-43ff-a226-bdf3981231c9",
+            "a6b64fed-4706-47f8-9694-ccdd542111c6",
         ]
         success, message = purchase_tickets(user_id, ticket_ids)
 
