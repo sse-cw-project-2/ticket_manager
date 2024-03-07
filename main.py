@@ -350,11 +350,11 @@ def api_reserve_tickets(request):
         return jsonify({"error": "Missing n_tickets in JSON payload"}), 400
 
     # Function call
-    success, message = reserve_tickets(req_data["identifier"], req_data["n_tickets"])[:2]
+    success, message, reserved_count, ticket_ids = reserve_tickets(req_data["identifier"], req_data["n_tickets"])
 
     # Handle outcomes
     if success:
-        return jsonify({"message": message}), 200
+        return jsonify({"message": message, "data": ticket_ids}), 200
     else:
         return jsonify({"error": message}), 400
 
