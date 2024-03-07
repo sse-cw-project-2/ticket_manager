@@ -388,7 +388,7 @@ def api_purchase_tickets(request):
         return jsonify({"error": "Missing JSON payload"}), 400
     if "ticket_ids" not in req_data:
         return jsonify({"error": "Missing ticket_ids in JSON payload"}), 400
-    if not "identifier" not in req_data:
+    if "identifier" not in req_data:
         return (
             jsonify({"error": "Missing identifier: attendee_id in JSON payload"}),
             400,
